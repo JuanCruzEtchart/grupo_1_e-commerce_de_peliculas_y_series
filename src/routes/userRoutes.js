@@ -21,4 +21,4 @@ router.get("/thankyou", userController.thankyou);
 
 router.get("/profile", userController.profile)
 
-module.exports = router;
+module.exports = router; 

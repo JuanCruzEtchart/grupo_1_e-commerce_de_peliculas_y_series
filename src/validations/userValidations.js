@@ -2,26 +2,45 @@ const { body } = require('express-validator');
 const fs = require("fs");
 const path = require("path");
 const userController = require('../controllers/userController');
+const db = require("../database/models");
+const sequelize = db.sequelize;
+const { Op } = require("sequelize");
 
-function findAll(){
-    const jsonData = fs.readFileSync(path.join(__dirname, "../data/users.json"))
-     const data = JSON.parse(jsonData);
-     return data
-   };
+
+//Modelos
+const User = db.User;
 
 module.exports = { 
 
-    registerValidation: [
-
+    registerValidation : [
+        
         body("email")
         .notEmpty().withMessage("Campo email incompleto")
         .isEmail()
         .withMessage("Debe ingresar un email valido")
-        .custom(function(value, {req}){
-           const users = findAll();
-           const usuarioEncontrado = users.find(function(user){
-            return user.email == value;
-            });
+        .custom(async function(value, {req}){
+            try {
+            
+            let usuarioEncontrado = await User.findOne({ where: { email:value}})
+                
+            if (usuarioEncontrado){ 
+                return false;
+            }
+            else {
+                return true;
+            }
+            }
+            catch (err) {
+                res.send(err);
+                }
+                
+         }).withMessage("El email que ingresó se encuentra tomado"),
+        
+        body("user").
+        notEmpty().withMessage("Campo de usuario incompleto")
+        .custom(async function(value, {req}){
+            try {
+            let usuarioEncontrado = await User.findOne({ where: { username:value}})
 
             if (usuarioEncontrado){ 
                 return false;
@@ -29,27 +48,15 @@ module.exports = {
             else {
                 return true;
             }
-         }).withMessage("El email que ingresó se encuentra tomado"),
-        
-        body("user").
-        notEmpty().withMessage("Campo de usuario incompleto")
-        .custom(function(value, {req}){
-            const users = findAll();
-            const usuarioEncontrado = users.find(function(user){
-             return user.name == value;
-             });
- 
-             if (usuarioEncontrado){ 
-                 return false;
-             }
-             else {
-                 return true;
-             }
+            }
+            catch (err) {
+                res.send(err);
+                }
           }).withMessage("El usuario que ingresó se encuentra tomado"),
         body("password").notEmpty().withMessage("Campo password incompleto")
         ]
         ,
-    loginValidation : [
+    loginValidation :  [
         body("email").notEmpty().withMessage("Campo email incompleto").isEmail().withMessage("Debe ingresar un email valido"),
         body("password").notEmpty().withMessage("Campo password incompleto")]
         }
